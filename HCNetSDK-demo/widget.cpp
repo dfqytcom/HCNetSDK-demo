@@ -28,10 +28,10 @@ void Widget::on_pushButton_connect_clicked()
 
     NET_DVR_DEVICEINFO_V30 deviceInfo;
     m_dvrUserId = NET_DVR_Login_V30(ui->lineEdit_ip->text().toLatin1().data(),
-                                 ui->spinBox_port->value(),
-                                 ui->lineEdit_username->text().toLatin1().data(),
-                                 ui->lineEdit_password->text().toLatin1().data(),
-                                 &deviceInfo);
+                                    ui->spinBox_port->value(),
+                                    ui->lineEdit_username->text().toLatin1().data(),
+                                    ui->lineEdit_password->text().toLatin1().data(),
+                                    &deviceInfo);
     if (NET_DVR_GetLastError()) {
         qCritical() << "Login failed. Error : " << QString(NET_DVR_GetErrorMsg());
         return;
@@ -102,57 +102,66 @@ void Widget::on_pushButton_endRecord_clicked()
 {
     LONG channel = 1;
     BOOL ok = NET_DVR_StopDVRRecord(m_dvrUserId, channel);
-    if (ok) {
-        m_endRecordTime = QDateTime::currentDateTime();
-        qInfo() << "End record." << m_endRecordTime.toString("yyyy-MM-dd HH:mm:ss");
-        std::thread th([this, channel](){
-            NET_DVR_TIME start, end;
-            start.dwYear = m_startRecordTime.date().year();
-            start.dwMonth = m_startRecordTime.date().month();
-            start.dwDay = m_startRecordTime.date().day();
-            start.dwHour = m_startRecordTime.time().hour();
-            start.dwMinute = m_startRecordTime.time().minute();
-            start.dwSecond = m_startRecordTime.time().second();
-            end.dwYear = m_endRecordTime.date().year();
-            end.dwMonth = m_endRecordTime.date().month();
-            end.dwDay = m_endRecordTime.date().day();
-            end.dwHour = m_endRecordTime.time().hour();
-            end.dwMinute = m_endRecordTime.time().minute();
-            end.dwSecond = m_endRecordTime.time().second();
-            QString filename = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
-                    + QDir::separator() + QUuid::createUuid().toString() + ".mp4";
-            LONG r = NET_DVR_GetFileByTime(m_dvrUserId, channel, &start, &end, filename.toLocal8Bit().data());
-            if (r != -1) {
-                qInfo() << "The video will be saved to " << filename << ". " << NET_DVR_GetLastError();
-                while (true) {
-                    int pos = NET_DVR_GetDownloadPos(r);
-                    if (pos == -1) {
-                        qWarning() << "NET_DVR_GetDownloadPos failed. Error code: " << NET_DVR_GetLastError()
-                                   << ". Message: "<< QString(NET_DVR_GetErrorMsg());
-                        return;
-                    }
-                    qInfo() << "Download progress: " << pos;
-                    if (pos == 100) {
-                        qInfo() << "Download done!";
-                        return;
-                    }
-                    if (pos > 100) {
-                        qWarning() << "Download video from dvr failed(pos = 200). Error code: " << NET_DVR_GetLastError()
-                                   << ". Message: " << QString(NET_DVR_GetErrorMsg());
-                        return;
-                    }
-                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                }
-            } else {
-                qWarning() << "NET_DVR_GetFileByTime failed. Error code: " << NET_DVR_GetLastError();
-            }
-        });
-        th.detach();
-
-    } else {
+    if (!ok) {
         qCritical() << "End record failed. Error: " << QString(NET_DVR_GetErrorMsg());
         return;
     }
+
+    m_endRecordTime = QDateTime::currentDateTime();
+    qInfo() << "End record." << m_endRecordTime.toString("yyyy-MM-dd HH:mm:ss");
+    NET_DVR_TIME start, end;
+    start.dwYear = m_startRecordTime.date().year();
+    start.dwMonth = m_startRecordTime.date().month();
+    start.dwDay = m_startRecordTime.date().day();
+    start.dwHour = m_startRecordTime.time().hour();
+    start.dwMinute = m_startRecordTime.time().minute();
+    start.dwSecond = m_startRecordTime.time().second();
+    end.dwYear = m_endRecordTime.date().year();
+    end.dwMonth = m_endRecordTime.date().month();
+    end.dwDay = m_endRecordTime.date().day();
+    end.dwHour = m_endRecordTime.time().hour();
+    end.dwMinute = m_endRecordTime.time().minute();
+    end.dwSecond = m_endRecordTime.time().second();
+    NET_DVR_PLAYCOND cond;
+    cond.dwChannel = channel;
+    cond.struStartTime = start;
+    cond.struStopTime = end;
+    QString filename = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+            + QDir::separator() + "record_" + m_startRecordTime.toString("yyyyMMdd_HHmmss") + ".mp4";
+    qDebug() << filename;
+    LONG r = NET_DVR_GetFileByTime_V40(m_dvrUserId, filename.toLocal8Bit().data(), &cond);
+    if (r == -1) {
+        qWarning() << "NET_DVR_GetFileByTime_V40 failed. Error code: " << NET_DVR_GetLastError();
+        return;
+    }
+    qInfo() << "The video will be saved to " << filename << ". " << NET_DVR_GetLastError();
+    std::thread th([this, r](){
+        if (!NET_DVR_PlayBackControl_V40(r, NET_DVR_PLAYSTART)) {
+            qWarning() << "NET_DVR_PlayBackControl_V40 failed.";
+            return;
+        }
+        while (true) {
+            int pos = NET_DVR_GetDownloadPos(r);
+            if (pos == -1) {
+                qWarning() << "NET_DVR_GetDownloadPos failed. Error code: " << NET_DVR_GetLastError()
+                           << ". Message: "<< QString(NET_DVR_GetErrorMsg());
+                return;
+            }
+            qInfo() << "Download progress: " << pos;
+            if (pos == 100) {
+                qInfo() << "Download done!";
+                return;
+            }
+            if (pos > 100) {
+                qWarning() << "Download video from dvr failed(pos = 200). Error code: " << NET_DVR_GetLastError()
+                           << ". Message: " << QString(NET_DVR_GetErrorMsg());
+                return;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    });
+    th.detach();
+
     ui->pushButton_startRecord->setEnabled(true);
     ui->pushButton_endRecord->setEnabled(false);
 }

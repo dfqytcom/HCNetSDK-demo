@@ -48,12 +48,16 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     qInstallMessageHandler(myMessageOutput);
 
+    QApplication a(argc, argv);
+    a.setApplicationDisplayName("HCNetSDK demo");
+
     if (!NET_DVR_Init()) {
         return -1;
     }
+    NET_DVR_SetConnectTime(2000, 1);
+    NET_DVR_SetReconnect(10000, true);
+    NET_DVR_SetLogToFile(3, QCoreApplication::applicationDirPath().toLocal8Bit().data(), TRUE);
 
-    QApplication a(argc, argv);
-    a.setApplicationDisplayName("HCNetSDK demo");
     Widget w;
     w.show();
     int r = a.exec();
