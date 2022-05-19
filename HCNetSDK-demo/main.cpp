@@ -47,9 +47,18 @@ int main(int argc, char *argv[])
 {
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     qInstallMessageHandler(myMessageOutput);
+
+    if (!NET_DVR_Init()) {
+        return -1;
+    }
+
     QApplication a(argc, argv);
     a.setApplicationDisplayName("HCNetSDK demo");
     Widget w;
     w.show();
-    return a.exec();
+    int r = a.exec();
+
+    NET_DVR_Cleanup();
+
+    return r;
 }

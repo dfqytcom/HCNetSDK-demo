@@ -2,7 +2,10 @@
 #define WIDGET_H
 
 #include <QWidget>
+#pragma warning( push )
+#pragma warning( disable : 4010 )
 #include "HCNetSDK.h"
+#pragma warning( pop )
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -24,7 +27,7 @@ private slots:
 
 private:
     Ui::Widget *ui;
-    LONG m_handle = -1;
+    LONG m_dvrUserId = -1;
 };
 extern QTextEdit *g_textedit;
 #endif // WIDGET_H

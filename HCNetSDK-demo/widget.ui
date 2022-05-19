@@ -95,14 +95,14 @@
         <item>
          <widget class="QPushButton" name="pushButton_connect">
           <property name="text">
-           <string>Connect</string>
+           <string>Login</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QPushButton" name="pushButton_disconnect">
           <property name="text">
-           <string>Disconnect</string>
+           <string>Logout</string>
           </property>
          </widget>
         </item>
