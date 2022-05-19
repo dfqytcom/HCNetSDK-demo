@@ -109,29 +109,27 @@ void Widget::on_pushButton_endRecord_clicked()
 
     m_endRecordTime = QDateTime::currentDateTime();
     qInfo() << "End record." << m_endRecordTime.toString("yyyy-MM-dd HH:mm:ss");
-    NET_DVR_TIME start, end;
-    start.dwYear = m_startRecordTime.date().year();
-    start.dwMonth = m_startRecordTime.date().month();
-    start.dwDay = m_startRecordTime.date().day();
-    start.dwHour = m_startRecordTime.time().hour();
-    start.dwMinute = m_startRecordTime.time().minute();
-    start.dwSecond = m_startRecordTime.time().second();
-    end.dwYear = m_endRecordTime.date().year();
-    end.dwMonth = m_endRecordTime.date().month();
-    end.dwDay = m_endRecordTime.date().day();
-    end.dwHour = m_endRecordTime.time().hour();
-    end.dwMinute = m_endRecordTime.time().minute();
-    end.dwSecond = m_endRecordTime.time().second();
     NET_DVR_PLAYCOND cond;
     cond.dwChannel = channel;
-    cond.struStartTime = start;
-    cond.struStopTime = end;
+    cond.struStartTime.dwYear = m_startRecordTime.date().year();
+    cond.struStartTime.dwMonth = m_startRecordTime.date().month();
+    cond.struStartTime.dwDay = m_startRecordTime.date().day();
+    cond.struStartTime.dwHour = m_startRecordTime.time().hour();
+    cond.struStartTime.dwMinute = m_startRecordTime.time().minute();
+    cond.struStartTime.dwSecond = m_startRecordTime.time().second();
+    cond.struStopTime.dwYear = m_endRecordTime.date().year();
+    cond.struStopTime.dwMonth = m_endRecordTime.date().month();
+    cond.struStopTime.dwDay = m_endRecordTime.date().day();
+    cond.struStopTime.dwHour = m_endRecordTime.time().hour();
+    cond.struStopTime.dwMinute = m_endRecordTime.time().minute();
+    cond.struStopTime.dwSecond = m_endRecordTime.time().second();
     QString filename = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
             + QDir::separator() + "record_" + m_startRecordTime.toString("yyyyMMdd_HHmmss") + ".mp4";
     qDebug() << filename;
     LONG r = NET_DVR_GetFileByTime_V40(m_dvrUserId, filename.toLocal8Bit().data(), &cond);
     if (r == -1) {
-        qWarning() << "NET_DVR_GetFileByTime_V40 failed. Error code: " << NET_DVR_GetLastError();
+        qWarning() << "NET_DVR_GetFileByTime_V40 failed. Error code: " << NET_DVR_GetLastError()
+                   << ". Message: " << QString(NET_DVR_GetErrorMsg());
         return;
     }
     qInfo() << "The video will be saved to " << filename << ". " << NET_DVR_GetLastError();
