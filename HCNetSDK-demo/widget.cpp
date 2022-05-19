@@ -10,7 +10,6 @@ Widget::Widget(QWidget *parent)
 {
     ui->setupUi(this);
     g_textedit = ui->textEdit_output;
-
     ui->pushButton_connect->setEnabled(true);
     ui->pushButton_disconnect->setEnabled(false);
 }
@@ -34,7 +33,7 @@ void Widget::on_pushButton_connect_clicked()
         qCritical() << "Login failed. Error : " << QString(NET_DVR_GetErrorMsg());
         return;
     }
-    qDebug() << "Login successful.";
+    qDebug() << "Login successful. User ID: " << m_dvrUserId;
     ui->pushButton_connect->setEnabled(false);
     ui->pushButton_disconnect->setEnabled(true);
 }
@@ -50,5 +49,28 @@ void Widget::on_pushButton_disconnect_clicked()
     }
     ui->pushButton_connect->setEnabled(true);
     ui->pushButton_disconnect->setEnabled(false);
+}
+
+void Widget::on_pushButton_capture_clicked()
+{
+    if (m_dvrUserId < 0) {
+        qWarning() << "User doesn't login. plz login first.";
+        return;
+    }
+    LONG channel = 1;
+    NET_DVR_JPEGPARA param;
+    param.wPicSize = 0xff;
+    param.wPicQuality = 0;
+    QString filename = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + QDir::separator() + QUuid::createUuid().toString() + ".jpg";
+    BOOL ok = NET_DVR_CaptureJPEGPicture(m_dvrUserId,  channel, &param, filename.toLocal8Bit().data());
+    if (ok) {
+        qInfo() << "Capture successful. The picture is saved to " << filename;
+        QPixmap p(filename);
+        p = p.scaled(ui->label_capture->width(), ui->label_capture->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        ui->label_capture->setPixmap(p);
+    } else {
+        qWarning() << "Capture failed. Error: " << QString(NET_DVR_GetErrorMsg());
+        return;
+    }
 }
 

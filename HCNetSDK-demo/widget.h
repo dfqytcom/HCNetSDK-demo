@@ -24,6 +24,7 @@ public:
 private slots:
     void on_pushButton_connect_clicked();
     void on_pushButton_disconnect_clicked();
+    void on_pushButton_capture_clicked();
 
 private:
     Ui::Widget *ui;
