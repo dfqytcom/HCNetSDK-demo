@@ -123,11 +123,11 @@ void Widget::on_pushButton_endRecord_clicked()
                     + QDir::separator() + QUuid::createUuid().toString() + ".mp4";
             LONG r = NET_DVR_GetFileByTime(m_dvrUserId, channel, &start, &end, filename.toLocal8Bit().data());
             if (r != -1) {
-                qInfo() << "The video is saved to " << filename << ". " << NET_DVR_GetLastError();
+                qInfo() << "The video will be saved to " << filename << ". " << NET_DVR_GetLastError();
                 while (true) {
                     int pos = NET_DVR_GetDownloadPos(r);
                     if (pos == -1) {
-                        qWarning() << "Download video from dvr failed. Error code: " << NET_DVR_GetLastError()
+                        qWarning() << "NET_DVR_GetDownloadPos failed. Error code: " << NET_DVR_GetLastError()
                                    << ". Message: "<< QString(NET_DVR_GetErrorMsg());
                         return;
                     }
@@ -137,14 +137,14 @@ void Widget::on_pushButton_endRecord_clicked()
                         return;
                     }
                     if (pos > 100) {
-                        qWarning() << "Download video from dvr failed. Error code: " << NET_DVR_GetLastError()
+                        qWarning() << "Download video from dvr failed(pos = 200). Error code: " << NET_DVR_GetLastError()
                                    << ". Message: " << QString(NET_DVR_GetErrorMsg());
                         return;
                     }
                     std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 }
             } else {
-                qWarning() << "Download video from dvr failed. Error code: " << NET_DVR_GetLastError();
+                qWarning() << "NET_DVR_GetFileByTime failed. Error code: " << NET_DVR_GetLastError();
             }
         });
         th.detach();
