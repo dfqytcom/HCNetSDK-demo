@@ -2,6 +2,7 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include "HCNetSDK.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -19,11 +20,11 @@ public:
 
 private slots:
     void on_pushButton_connect_clicked();
-
     void on_pushButton_disconnect_clicked();
 
 private:
     Ui::Widget *ui;
+    LONG m_handle = -1;
 };
 extern QTextEdit *g_textedit;
 #endif // WIDGET_H

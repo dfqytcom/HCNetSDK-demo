@@ -30,7 +30,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEdit_ip"/>
+         <widget class="QLineEdit" name="lineEdit_ip">
+          <property name="text">
+           <string>192.168.101.11</string>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QLabel" name="label_2">
@@ -40,7 +44,17 @@
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="spinBox"/>
+         <widget class="QSpinBox" name="spinBox_port">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>65535</number>
+          </property>
+          <property name="value">
+           <number>8000</number>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -54,7 +68,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEdit_username"/>
+         <widget class="QLineEdit" name="lineEdit_username">
+          <property name="text">
+           <string>admin</string>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QLabel" name="label_4">
@@ -64,7 +82,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEdit_password"/>
+         <widget class="QLineEdit" name="lineEdit_password">
+          <property name="text">
+           <string>ABCabc123</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
