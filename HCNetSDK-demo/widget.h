@@ -2,6 +2,7 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include <QDateTime>
 #pragma warning( push )
 #pragma warning( disable : 4010 )
 #include "HCNetSDK.h"
@@ -25,10 +26,13 @@ private slots:
     void on_pushButton_connect_clicked();
     void on_pushButton_disconnect_clicked();
     void on_pushButton_capture_clicked();
+    void on_pushButton_startRecord_clicked();
+    void on_pushButton_endRecord_clicked();
 
 private:
     Ui::Widget *ui;
     LONG m_dvrUserId = -1;
+    QDateTime m_startRecordTime, m_endRecordTime;
 };
 extern QTextEdit *g_textedit;
 #endif // WIDGET_H
