@@ -84,82 +84,43 @@ void Widget::on_pushButton_startRecord_clicked()
         return;
     }
     LONG channel = 1;
-    // 录像类型：0- 手动，1- 报警，2- 回传，3- 信号，4- 移动，5- 遮挡
-    LONG recordType = 0;
-    BOOL ok = NET_DVR_StartDVRRecord(m_dvrUserId, channel, recordType);
-    if (ok) {
-        m_startRecordTime = QDateTime::currentDateTime();
-        qInfo() << "Start record.  " << m_startRecordTime.toString("yyyy-MM-dd HH:mm:ss");
-    } else {
-        qCritical() << "Start record failed. Error: " << QString(NET_DVR_GetErrorMsg());
+    NET_DVR_PREVIEWINFO StruPlayInfo;
+    StruPlayInfo.hPlayWnd = NULL;
+    StruPlayInfo.lChannel = channel;
+    StruPlayInfo.dwStreamType = 0;
+    StruPlayInfo.dwLinkMode = 0;
+    StruPlayInfo.bBlocked = 1;
+    m_playHandle = NET_DVR_RealPlay_V40(m_dvrUserId, &StruPlayInfo, NULL, NULL);
+    if (m_playHandle == -1) {
+        qCritical() << "NET_DVR_RealPlay_V40 failed. Error code: " << NET_DVR_GetLastError();
         return;
     }
+    m_startRecordTime = QDateTime::currentDateTime();
+    qInfo() << "start NET_DVR_RealPlay_V40. " << m_startRecordTime.toString("yyyy-MM-dd HH:mm:ss");
+    QString filename = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+                + QDir::separator() + "record_" + m_startRecordTime.toString("yyyyMMdd_HHmmss") + ".mp4";
+    if (!NET_DVR_SaveRealData(m_playHandle, filename.toLocal8Bit().data())) {
+        qCritical() << "NET_DVR_SaveRealData failed. Error code: " << NET_DVR_GetLastError();
+        return;
+    }
+    qInfo() << "start NET_DVR_SaveRealData";
+    qInfo() << "The video will be saved to " << filename;
     ui->pushButton_startRecord->setEnabled(false);
     ui->pushButton_endRecord->setEnabled(true);
 }
 
 void Widget::on_pushButton_endRecord_clicked()
 {
-    LONG channel = 1;
-    BOOL ok = NET_DVR_StopDVRRecord(m_dvrUserId, channel);
-    if (!ok) {
-        qCritical() << "End record failed. Error: " << QString(NET_DVR_GetErrorMsg());
+    if (m_playHandle < 0) {
+        qWarning() << "m_playHandle < 0";
         return;
     }
-
+    if (!NET_DVR_StopSaveRealData(m_playHandle)) {
+        qWarning() << "NET_DVR_StopSaveRealData failed. Error code: " << NET_DVR_GetLastError();
+        return;
+    }
     m_endRecordTime = QDateTime::currentDateTime();
-    qInfo() << "End record." << m_endRecordTime.toString("yyyy-MM-dd HH:mm:ss");
-    NET_DVR_PLAYCOND cond;
-    cond.dwChannel = channel;
-    cond.struStartTime.dwYear = m_startRecordTime.date().year();
-    cond.struStartTime.dwMonth = m_startRecordTime.date().month();
-    cond.struStartTime.dwDay = m_startRecordTime.date().day();
-    cond.struStartTime.dwHour = m_startRecordTime.time().hour();
-    cond.struStartTime.dwMinute = m_startRecordTime.time().minute();
-    cond.struStartTime.dwSecond = m_startRecordTime.time().second();
-    cond.struStopTime.dwYear = m_endRecordTime.date().year();
-    cond.struStopTime.dwMonth = m_endRecordTime.date().month();
-    cond.struStopTime.dwDay = m_endRecordTime.date().day();
-    cond.struStopTime.dwHour = m_endRecordTime.time().hour();
-    cond.struStopTime.dwMinute = m_endRecordTime.time().minute();
-    cond.struStopTime.dwSecond = m_endRecordTime.time().second();
-    QString filename = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
-            + QDir::separator() + "record_" + m_startRecordTime.toString("yyyyMMdd_HHmmss") + ".mp4";
-    qDebug() << filename;
-    LONG r = NET_DVR_GetFileByTime_V40(m_dvrUserId, filename.toLocal8Bit().data(), &cond);
-    if (r == -1) {
-        qWarning() << "NET_DVR_GetFileByTime_V40 failed. Error code: " << NET_DVR_GetLastError()
-                   << ". Message: " << QString(NET_DVR_GetErrorMsg());
-        return;
-    }
-    qInfo() << "The video will be saved to " << filename << ". " << NET_DVR_GetLastError();
-    std::thread th([this, r](){
-        if (!NET_DVR_PlayBackControl_V40(r, NET_DVR_PLAYSTART)) {
-            qWarning() << "NET_DVR_PlayBackControl_V40 failed.";
-            return;
-        }
-        while (true) {
-            int pos = NET_DVR_GetDownloadPos(r);
-            if (pos == -1) {
-                qWarning() << "NET_DVR_GetDownloadPos failed. Error code: " << NET_DVR_GetLastError()
-                           << ". Message: "<< QString(NET_DVR_GetErrorMsg());
-                return;
-            }
-            qInfo() << "Download progress: " << pos;
-            if (pos == 100) {
-                qInfo() << "Download done!";
-                return;
-            }
-            if (pos > 100) {
-                qWarning() << "Download video from dvr failed(pos = 200). Error code: " << NET_DVR_GetLastError()
-                           << ". Message: " << QString(NET_DVR_GetErrorMsg());
-                return;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        }
-    });
-    th.detach();
-
+    qInfo() << "NET_DVR_StopSaveRealData." << m_endRecordTime.toString("yyyy-MM-dd HH:mm:ss");
     ui->pushButton_startRecord->setEnabled(true);
     ui->pushButton_endRecord->setEnabled(false);
 }

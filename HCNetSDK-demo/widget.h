@@ -33,6 +33,7 @@ private:
     Ui::Widget *ui;
     LONG m_dvrUserId = -1;
     QDateTime m_startRecordTime, m_endRecordTime;
+    LONG m_playHandle = -1;
 };
 extern QTextEdit *g_textedit;
 #endif // WIDGET_H
