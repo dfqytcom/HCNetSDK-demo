@@ -119,6 +119,10 @@ void Widget::on_pushButton_endRecord_clicked()
         qWarning() << "NET_DVR_StopSaveRealData failed. Error code: " << NET_DVR_GetLastError();
         return;
     }
+    if (!NET_DVR_StopRealPlay(m_playHandle)) {
+        qWarning() << "NET_DVR_StopRealPlay failed. Error code: " << NET_DVR_GetLastError();
+        return;
+    }
     m_endRecordTime = QDateTime::currentDateTime();
     qInfo() << "NET_DVR_StopSaveRealData." << m_endRecordTime.toString("yyyy-MM-dd HH:mm:ss");
     ui->pushButton_startRecord->setEnabled(true);
